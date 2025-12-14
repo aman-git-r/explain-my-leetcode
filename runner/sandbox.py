@@ -7,14 +7,7 @@ import json
 TIME_LIMIT_SECONDS = 2
 
 
-def run_user_code(user_code: str, test_cases: list):
-    """
-    Executes user-submitted Python code safely in a subprocess.
-
-    Assumptions:
-    - User defines a function named `solution`
-    - Test cases are dicts passed as keyword arguments
-    """
+def run_user_code(user_code: str, test_cases: list, method_name: str):
 
     # 1. Create a temporary Python file
     with tempfile.NamedTemporaryFile(
@@ -23,7 +16,6 @@ def run_user_code(user_code: str, test_cases: list):
         delete=False
     ) as temp_file:
         file_path = temp_file.name
-
         # --- Write user code ---
         temp_file.write(user_code)
         temp_file.write("\n\n")
@@ -32,11 +24,17 @@ def run_user_code(user_code: str, test_cases: list):
         temp_file.write("import json\n")
         temp_file.write("def __run_tests():\n")
         temp_file.write("    results = []\n")
+        temp_file.write("    try:\n")
+        temp_file.write("        obj = Solution()\n")
+        temp_file.write("    except Exception as e:\n")
+        temp_file.write(
+            "        print(json.dumps([{'error': 'Solution class not found'}]))\n")
+        temp_file.write("        return\n")
 
         for tc in test_cases:
             temp_file.write("    try:\n")
             temp_file.write(
-                f"        output = solution(**{tc})\n"
+                f"        output = obj.{method_name}(**{tc})\n"
             )
             temp_file.write(
                 f"        results.append({{'input': {tc}, 'output': output}})\n"
